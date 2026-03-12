@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>발주 앱</title>
 <link rel="manifest" href="manifest.json">
+
 <style>
+
 body{
 font-family:sans-serif;
 margin:0;
@@ -44,9 +46,8 @@ text-overflow:ellipsis
 }
 
 input[type='number']{
-width:42px;
-padding:3px;
-font-size:14px
+width:36px;
+text-align:center
 }
 
 button{
@@ -55,14 +56,14 @@ border:none;
 border-radius:5px;
 background:#222;
 color:white;
-font-size:12px;
-cursor:pointer
+font-size:12px
 }
 
-.arrow{
-background:#666;
-padding:3px 5px;
-font-size:11px
+.qtybtn{
+width:22px;
+height:22px;
+padding:0;
+background:#444
 }
 
 .controls{
@@ -70,11 +71,6 @@ display:flex;
 gap:6px;
 margin-top:8px;
 flex-wrap:wrap
-}
-
-.controls input{
-padding:5px;
-font-size:13px
 }
 
 #result,#history{
@@ -85,33 +81,10 @@ border-radius:8px;
 font-size:14px
 }
 
-#result h3,#history h3{
-margin-top:0
-}
-
-.history-day{
-border-top:1px solid #eee;
-padding-top:6px;
-margin-top:6px
-}
 .dragging{
-opacity:0.5;
+opacity:0.5
 }
 
-.qtybtn{
-background:#444;
-width:22px;
-height:22px;
-padding:0;
-font-size:14px;
-line-height:20px;
-}
-
-input[type='number']{
-width:36px;
-text-align:center;
-}
-  
 </style>
 </head>
 <body>
@@ -140,93 +113,30 @@ text-align:center;
 <script>
 
 const defaultItems=[
-"토스트빵",
-  "육수",
-  "밀떡",
-  "치즈떡",
-  "구슬떡",
-  "볶음소스",
-  "알밥 단무지",
-  "깍둑 단무지",
-  "쌈무",
-  "멸균우유",
-  "휘핑크림",
-  "그라나파다노 치즈",
-  "다진마늘",
-  "깐계란",
-  "분말가루",
-  "우동면",
-  "칼국수면",
-  "버터",
-  "꼬들무 명태회",
-  "김치전골",
-  "맑은전골",
-  "왕만두",
-  "종합어묵",
-  "꼬치어묵",
-  "부산어묵",
-  "냉동딸기",
-  "냉동망고",
-  "두부김치",
-  "무뼈닭발",
-  "오돌뼈",
-  "쭈꾸미",
-  "부추전",
-  "먹태",
-  "육회",
-  "김치전",
-  "베이컨,크럼블",
-  "옥수수전",
-  "치킨",
-  "고추튀김",
-  "돈까스",
-  "닭갈비",
-  "곱대창",
-  "수비드삼겹살",
-  "목전지",
-  "뼈닭발",
-  "은행",
-  "우유튀김",
-  "새우살",
-  "냉동감자",
-  "스마일감자(쿠팡)",
-  "데이터펍스(쿠팡)",
-  "묵사발육수",
-  "식혜",
-  "찌개두부",
-  "돼지갈비소스",
-  "무침소스",
-  "특제간장",
-  "초간장",
-  "마요네즈",
-  "우동다시",
-  "돈까스소스",
-  "당면",
-  "빙수팥",
-  "후르츠칵",
-  "빙수떡",
-  "사리면",
-  "체다슬",
-  "우삼겹",
-  "피자치즈",
-  "절단꽃게",
-  "펩시콜라",
-  "명태튀각,
-  "조미김가루",
-  "우동건더기",
-  "테이블냅킨",
-  "핸드타올"
+"토스트빵","육수","밀떡","치즈떡","구슬떡","볶음소스","알밥 단무지","깍둑 단무지",
+"쌈무","멸균우유","휘핑크림","그라나파다노 치즈","다진마늘","깐계란","분말가루",
+"우동면","칼국수면","버터","꼬들무 명태회","김치전골","맑은전골","왕만두","종합어묵",
+"꼬치어묵","부산어묵","냉동딸기","냉동망고","두부김치","무뼈닭발","오돌뼈","쭈꾸미",
+"부추전","먹태","육회","김치전","베이컨,크럼블","옥수수전","치킨","고추튀김",
+"돈까스","닭갈비","곱대창","수비드삼겹살","목전지","뼈닭발","은행","우유튀김",
+"새우살","냉동감자","스마일감자(쿠팡)","데이터펍스(쿠팡)","묵사발육수","식혜",
+"찌개두부","돼지갈비소스","무침소스","특제간장","초간장","마요네즈","우동다시",
+"돈까스소스","당면","빙수팥","후르츠칵","빙수떡","사리면","체다슬","우삼겹",
+"피자치즈","절단꽃게","펩시콜라","명태튀각","조미김가루","우동건더기","테이블냅킨","핸드타올"
 ]
 
 let items=[]
+let dragIndex=null
 
 function load(){
 const saved=localStorage.getItem("order_items")
+
 if(saved){
 items=JSON.parse(saved)
 }else{
 items=defaultItems.map(n=>({name:n,qty:0}))
 }
+
 render()
 renderHistory()
 }
@@ -236,43 +146,43 @@ localStorage.setItem("order_items",JSON.stringify(items))
 }
 
 function render(){
+
+const container=document.getElementById("items")
+container.innerHTML=""
+
+items.forEach((item,index)=>{
+
+const div=document.createElement("div")
+div.className="item"
 div.draggable=true
 
 div.innerHTML=`
 <span>${item.name}</span>
-
 <button class="qtybtn" onclick="changeQty(${index},-1)">-</button>
-
 <input type="number" min="0" value="${item.qty}" onchange="updateQty(${index},this.value)">
-
 <button class="qtybtn" onclick="changeQty(${index},1)">+</button>
-
 <button onclick="editItem(${index})">수정</button>
-
 <button onclick="removeItem(${index})">삭제</button>
+`
 
-}
+div.addEventListener("dragstart",()=>dragIndex=index)
 
-function moveUp(index){
-if(index===0) return
+div.addEventListener("dragover",e=>e.preventDefault())
 
-const temp=items[index]
-items[index]=items[index-1]
-items[index-1]=temp
+div.addEventListener("drop",()=>{
 
-save()
-render()
-}
-
-function moveDown(index){
-if(index===items.length-1) return
-
-const temp=items[index]
-items[index]=items[index+1]
-items[index+1]=temp
+const moved=items.splice(dragIndex,1)[0]
+items.splice(index,0,moved)
 
 save()
 render()
+
+})
+
+container.appendChild(div)
+
+})
+
 }
 
 function addItem(){
@@ -285,19 +195,6 @@ save()
 render()
 }
 
-function changeQty(index,amount){
-
-items[index].qty+=amount
-
-if(items[index].qty<0){
-items[index].qty=0
-}
-
-save()
-render()
-
-}
-
 function removeItem(index){
 items.splice(index,1)
 save()
@@ -305,21 +202,23 @@ render()
 }
 
 function editItem(index){
-
-const newName = prompt("항목 이름 수정", items[index].name)
-
+const newName=prompt("항목 이름 수정",items[index].name)
 if(!newName) return
-
-items[index].name = newName.trim()
-
+items[index].name=newName
 save()
 render()
-
-}  
+}
 
 function updateQty(index,val){
 items[index].qty=parseInt(val)||0
 save()
+}
+
+function changeQty(index,amount){
+items[index].qty+=amount
+if(items[index].qty<0) items[index].qty=0
+save()
+render()
 }
 
 function resetQty(){
@@ -385,71 +284,6 @@ container.innerHTML=""
 return
 }
 
-let dragIndex=null
-
-document.addEventListener("dragstart",e=>{
-const item=e.target.closest(".item")
-if(!item) return
-
-dragIndex=[...item.parentNode.children].indexOf(item)
-item.classList.add("dragging")
-})
-
-document.addEventListener("dragend",e=>{
-const item=e.target.closest(".item")
-if(item) item.classList.remove("dragging")
-})
-
-document.addEventListener("dragover",e=>{
-e.preventDefault()
-
-const container=document.getElementById("items")
-const afterElement=getDragAfterElement(container,e.clientY)
-const dragging=document.querySelector(".dragging")
-
-if(!dragging) return
-
-if(afterElement==null){
-container.appendChild(dragging)
-}else{
-container.insertBefore(dragging,afterElement)
-}
-})
-
-document.addEventListener("drop",e=>{
-
-const container=document.getElementById("items")
-const newOrder=[...container.children]
-
-items=newOrder.map(div=>{
-const name=div.querySelector("span").textContent
-return items.find(i=>i.name===name)
-})
-
-save()
-render()
-
-})
-
-function getDragAfterElement(container,y){
-
-const els=[...container.querySelectorAll(".item:not(.dragging)")]
-
-return els.reduce((closest,child)=>{
-
-const box=child.getBoundingClientRect()
-const offset=y-box.top-box.height/2
-
-if(offset<0 && offset>closest.offset){
-return {offset:offset,element:child}
-}else{
-return closest
-}
-
-},{offset:Number.NEGATIVE_INFINITY}).element
-
-}
-
 container.innerHTML="<h3>최근 발주 내역</h3>"
 
 history.sort((a,b)=>new Date(b.date)-new Date(a.date))
@@ -467,7 +301,6 @@ div.appendChild(title)
 day.items.forEach(i=>{
 const p=document.createElement("p")
 p.textContent=i.name+" "+i.qty
-
 div.appendChild(p)
 })
 
