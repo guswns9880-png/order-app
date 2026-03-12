@@ -2,205 +2,246 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>발주 앱</title>
-
+<link rel="manifest" href="manifest.json">
 <style>
-body{
-font-family:sans-serif;
-background:#f5f5f5;
-margin:0;
-padding:20px;
-}
-
-h1{
-text-align:center;
-}
-
-.container{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-}
-
-.item{
-background:white;
-padding:10px;
-border-radius:8px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-cursor:grab;
-}
-
-.item span{
-flex:1;
-}
-
-button{
-margin-left:5px;
-}
-
-.addbox{
-margin-top:20px;
-display:flex;
-gap:10px;
-}
-
-input{
-flex:1;
-padding:8px;
-}
-
+body{font-family:sans-serif;margin:0;background:#f2f2f2}
+header{background:#111;color:white;padding:14px;text-align:center;font-size:18px}
+.container{padding:15px}
+.item{display:flex;align-items:center;gap:6px;background:white;margin-bottom:8px;padding:10px;border-radius:8px}
+.item span{flex:1;font-weight:500}
+input[type='number']{width:65px;padding:5px}
+button{padding:8px 10px;border:none;border-radius:8px;background:#111;color:white;font-size:13px}
+.controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+#result,#history{margin-top:20px;background:white;padding:12px;border-radius:10px}
+#result h3,#history h3{margin-top:0}
+.arrow{background:#555}
+.history-day{border-top:1px solid #eee;padding-top:8px;margin-top:8px}
 </style>
 </head>
-
 <body>
 
-<h1>발주 목록</h1>
+<header>📦 발주 앱</header>
 
-<div class="container" id="list"></div>
+<div class="container">
 
-<div class="addbox">
-<input id="newItem" placeholder="항목 추가">
+<div id="items"></div>
+
+<div class="controls">
+<input type="text" id="newItem" placeholder="항목 추가">
 <button onclick="addItem()">추가</button>
+<button onclick="resetQty()">수량 초기화</button>
+</div>
+
+<div class="controls">
+<button onclick="completeOrder()">완료</button>
+</div>
+
+<div id="result"></div>
+<div id="history"></div>
+
 </div>
 
 <script>
 
-let items = JSON.parse(localStorage.getItem("items")) || [
+const defaultItems=[
+"양배추 슬라이스","닭볶음탕 육수","토스트빵","한우 곱대창","냉동 우동면 5입","찌개두부","냉동 칼국수 5입","두부김치용 김치볶음","당면 1kg","매운 오돌뼈","알밥 단무지","매운 닭발","깍둑 단무지","뼈닭발","쌈무","쭈꾸미 볶음","멸균우유 1000ml","닭갈비","치즈떡볶이 떡 1kg","바사삭 치킨","밀떡 1kg","고추튀김 800g","구슬떡","뉴일식 골드 등신 돈까스","그라나파다노치즈","우유소스튀김","다진마늘 1kg","은행 500g","버터","종합 어묵","깐계란 1kg","꼬치어묵 (CJ)","빙수팥","부산어묵(CJ) 1kg","꼬들무 명태회","한우 육회","냉동 딸기","김치전","냉동 망고","베이컨 567g","빙수떡 200g","부추전","목전지 1kg","새우살 200g","손질한 먹태","옥수수전","김치전골","냉동감자(크링클)","왕만두","돼지갈비장 소스","메인분말가루","무침소스","특제간장소스","볶음 소스 5입","초간장소스","우동다시","마요네즈","펩시 콜라","참쌀 식혜","돈까스 소스","명태 껍질 튀각","조미 김가루","후르츠 칵테일 3kg","우동 건더기 스프","테이블 냅킨","핸드타올 box"
+]
 
-["양배추 슬라이스","닭볶음탕 육수"],
-["토스트빵","한우 곱대창"],
-["냉동 우동면 5입","찌개두부"],
-["냉동 칼국수 5입","두부김치용 김치볶음"],
-["당면 1kg","매운 오돌뼈"],
-["알밥 단무지","매운 닭발"],
-["깍둑 단무지","뼈닭발"],
-["쌈무","쭈꾸미 볶음"],
-["멸균우유 1000ml","닭갈비"],
-["치즈떡볶이 떡 1kg","바사삭 치킨"],
-["밀떡 1kg","고추튀김 800g"],
-["구슬떡","뉴일식 골드 등신 돈까스"],
-["그라나파다노치즈","우유소스튀김"],
-["다진마늘 1kg","은행 500g"],
-["버터","종합 어묵"],
-["깐계란 1kg","꼬치어묵 (CJ)"],
-["빙수팥","부산어묵(CJ) 1kg"],
-["꼬들무 명태회","한우 육회"],
-["냉동 딸기","김치전"],
-["냉동 망고","베이컨 567g"],
-["빙수떡 200g","부추전"],
-["목전지 1kg","새우살 200g"],
-["손질한 먹태","옥수수전"],
-["김치전골","냉동감자(크링클)"],
-["왕만두","돼지갈비장 소스"],
-["메인분말가루",""],
-["무침소스",""],
-["특제간장소스",""],
-["볶음 소스 5입",""],
-["초간장소스",""],
-["우동다시",""],
-["마요네즈",""],
-["펩시 콜라",""],
-["참쌀 식혜",""],
-["돈까스 소스",""],
-["명태 껍질 튀각",""],
-["조미 김가루",""],
-["후르츠 칵테일 3kg",""],
-["우동 건더기 스프",""],
-["테이블 냅킨",""],
-["핸드타올 box",""]
+let items=[]
 
-];
+function load(){
+const saved=localStorage.getItem("order_items")
+if(saved){
+items=JSON.parse(saved)
+}else{
+items=defaultItems.map(n=>({name:n,qty:0}))
+}
+render()
+renderHistory()
+}
 
 function save(){
-localStorage.setItem("items",JSON.stringify(items));
+localStorage.setItem("order_items",JSON.stringify(items))
 }
 
 function render(){
+const container=document.getElementById("items")
+container.innerHTML=""
 
-const list=document.getElementById("list");
-list.innerHTML="";
+items.forEach((item,index)=>{
 
-items.forEach((row,rowIndex)=>{
+const div=document.createElement("div")
+div.className="item"
 
-row.forEach((text,colIndex)=>{
-
-if(!text) return;
-
-const div=document.createElement("div");
-div.className="item";
-div.draggable=true;
 
 div.innerHTML=`
-<span>${text}</span>
-<button onclick="editItem(${rowIndex},${colIndex})">✏️</button>
-<button onclick="deleteItem(${rowIndex},${colIndex})">❌</button>
-`;
+<button class="arrow" onclick="moveUp(${index})">▲</button>
+<button class="arrow" onclick="moveDown(${index})">▼</button>
+<span>${item.name}</span>
+<button onclick="editItem(${index})">수정</button>
+<input type="number" min="0" value="${item.qty}" onchange="updateQty(${index},this.value)">
+<button onclick="removeItem(${index})">삭제</button>
+`
 
-div.addEventListener("dragstart",e=>{
-e.dataTransfer.setData("text",JSON.stringify([rowIndex,colIndex]));
-});
+container.appendChild(div)
 
-div.addEventListener("dragover",e=>e.preventDefault());
-
-div.addEventListener("drop",e=>{
-const from=JSON.parse(e.dataTransfer.getData("text"));
-const to=[rowIndex,colIndex];
-
-const temp=items[from[0]][from[1]];
-items[from[0]][from[1]]=items[to[0]][to[1]];
-items[to[0]][to[1]]=temp;
-
-save();
-render();
-});
-
-list.appendChild(div);
-
-});
-
-});
+})
 
 }
 
-function editItem(r,c){
+function moveUp(index){
+if(index===0) return
 
-let name=prompt("이름 수정",items[r][c]);
+const temp=items[index]
+items[index]=items[index-1]
+items[index-1]=temp
 
-if(name){
-items[r][c]=name;
-save();
-render();
+save()
+render()
 }
 
-}
+function moveDown(index){
+if(index===items.length-1) return
 
-function deleteItem(r,c){
+const temp=items[index]
+items[index]=items[index+1]
+items[index+1]=temp
 
-items[r][c]="";
-save();
-render();
-
+save()
+render()
 }
 
 function addItem(){
+const input=document.getElementById("newItem")
+const name=input.value.trim()
+if(!name) return
+items.push({name,qty:0})
+input.value=""
+save()
+render()
+}
 
-let name=document.getElementById("newItem").value;
+function removeItem(index){
+items.splice(index,1)
+save()
+render()
+}
 
-if(!name) return;
+function editItem(index){
 
-items.push([name,""]);
+const newName = prompt("항목 이름 수정", items[index].name)
 
-document.getElementById("newItem").value="";
+if(!newName) return
 
-save();
-render();
+items[index].name = newName.trim()
+
+save()
+render()
+
+}  
+
+function updateQty(index,val){
+items[index].qty=parseInt(val)||0
+save()
+}
+
+function resetQty(){
+items.forEach(i=>i.qty=0)
+save()
+render()
+}
+
+function completeOrder(){
+
+const result=document.getElementById("result")
+result.innerHTML="<h3>발주 리스트</h3>"
+
+const ordered=items.filter(i=>i.qty>0)
+
+ordered.forEach(i=>{
+const p=document.createElement("p")
+p.textContent=i.name+" "+i.qty
+result.appendChild(p)
+})
+
+saveHistory(ordered)
+renderHistory()
 
 }
 
-render();
+function getTodayKey(){
+const d=new Date()
+return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()
+}
+
+function saveHistory(list){
+
+if(list.length===0) return
+
+let history=JSON.parse(localStorage.getItem("order_history")||"[]")
+
+const today=getTodayKey()
+
+history=history.filter(h=>h.date!==today)
+
+history.push({date:today,items:list})
+
+const now=new Date()
+
+history=history.filter(h=>{
+const d=new Date(h.date)
+const diff=(now-d)/(1000*60*60*24)
+return diff<=2
+})
+
+localStorage.setItem("order_history",JSON.stringify(history))
+
+}
+
+function renderHistory(){
+
+const container=document.getElementById("history")
+let history=JSON.parse(localStorage.getItem("order_history")||"[]")
+
+if(history.length===0){
+container.innerHTML=""
+return
+}
+
+container.innerHTML="<h3>최근 발주 내역</h3>"
+
+history.sort((a,b)=>new Date(b.date)-new Date(a.date))
+
+history.forEach(day=>{
+
+const div=document.createElement("div")
+div.className="history-day"
+
+const title=document.createElement("strong")
+title.textContent=day.date
+
+div.appendChild(title)
+
+day.items.forEach(i=>{
+const p=document.createElement("p")
+p.textContent=i.name+" "+i.qty
+
+div.appendChild(p)
+})
+
+container.appendChild(div)
+
+})
+
+}
+
+load()
+
+if("serviceWorker" in navigator){
+navigator.serviceWorker.register("sw.js")
+}
 
 </script>
 
