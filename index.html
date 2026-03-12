@@ -29,16 +29,16 @@ padding:12px
 .item{
 display:flex;
 align-items:center;
-gap:4px;
+gap:6px;
 background:white;
 margin-bottom:6px;
-padding:6px 8px;
+padding:8px;
 border-radius:6px
 }
 
 .item span{
 flex:1;
-font-size:15px;
+font-size:14px;
 font-weight:600;
 white-space:nowrap;
 overflow:hidden;
@@ -46,7 +46,7 @@ text-overflow:ellipsis
 }
 
 input[type='number']{
-width:36px;
+width:45px;
 text-align:center
 }
 
@@ -59,17 +59,17 @@ color:white;
 font-size:12px
 }
 
-.qtybtn{
-width:22px;
-height:22px;
+.sortbtn{
+width:26px;
+height:24px;
 padding:0;
-background:#444
+background:#555
 }
 
 .controls{
 display:flex;
 gap:6px;
-margin-top:8px;
+margin-top:10px;
 flex-wrap:wrap
 }
 
@@ -81,12 +81,9 @@ border-radius:8px;
 font-size:14px
 }
 
-.dragging{
-opacity:0.5
-}
-
 </style>
 </head>
+
 <body>
 
 <header>📦 발주 앱</header>
@@ -126,9 +123,9 @@ const defaultItems=[
 ]
 
 let items=[]
-let dragIndex=null
 
 function load(){
+
 const saved=localStorage.getItem("order_items")
 
 if(saved){
@@ -139,6 +136,7 @@ items=defaultItems.map(n=>({name:n,qty:0}))
 
 render()
 renderHistory()
+
 }
 
 function save(){
@@ -154,35 +152,38 @@ items.forEach((item,index)=>{
 
 const div=document.createElement("div")
 div.className="item"
-div.draggable=true
 
 div.innerHTML=`
+<button class="sortbtn" onclick="moveUp(${index})">▲</button>
+<button class="sortbtn" onclick="moveDown(${index})">▼</button>
 <span>${item.name}</span>
-<button class="qtybtn" onclick="changeQty(${index},-1)">-</button>
 <input type="number" min="0" value="${item.qty}" onchange="updateQty(${index},this.value)">
-<button class="qtybtn" onclick="changeQty(${index},1)">+</button>
 <button onclick="editItem(${index})">수정</button>
 <button onclick="removeItem(${index})">삭제</button>
 `
-
-div.addEventListener("dragstart",()=>dragIndex=index)
-
-div.addEventListener("dragover",e=>e.preventDefault())
-
-div.addEventListener("drop",()=>{
-
-const moved=items.splice(dragIndex,1)[0]
-items.splice(index,0,moved)
-
-save()
-render()
-
-})
 
 container.appendChild(div)
 
 })
 
+}
+
+function moveUp(index){
+if(index===0) return
+const temp=items[index]
+items[index]=items[index-1]
+items[index-1]=temp
+save()
+render()
+}
+
+function moveDown(index){
+if(index===items.length-1) return
+const temp=items[index]
+items[index]=items[index+1]
+items[index+1]=temp
+save()
+render()
 }
 
 function addItem(){
@@ -212,13 +213,6 @@ render()
 function updateQty(index,val){
 items[index].qty=parseInt(val)||0
 save()
-}
-
-function changeQty(index,amount){
-items[index].qty+=amount
-if(items[index].qty<0) items[index].qty=0
-save()
-render()
 }
 
 function resetQty(){
@@ -291,7 +285,6 @@ history.sort((a,b)=>new Date(b.date)-new Date(a.date))
 history.forEach(day=>{
 
 const div=document.createElement("div")
-div.className="history-day"
 
 const title=document.createElement("strong")
 title.textContent=day.date
