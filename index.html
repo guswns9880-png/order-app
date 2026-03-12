@@ -46,14 +46,14 @@ button{padding:8px 10px;border:none;border-radius:8px;background:#111;color:whit
 <script>
 
 const defaultItems=[
-"밀떡",
-"치즈떡",
-"구슬떡",
-"그라나파다노 치즈",
-"다진마늘",
-"깐계란",
-"알밥 단무지",
-"깍둑 단무지"
+"참이슬",
+"처음처럼",
+"콜라",
+"사이다",
+"맥주",
+"양파",
+"감자",
+"닭"
 ]
 
 let items=[]
@@ -88,4 +88,155 @@ div.innerHTML=`
 <button class="arrow" onclick="moveDown(${index})">▼</button>
 <span>${item.name}</span>
 <input type="number" min="0" value="${item.qty}" onchange="updateQty(${index},this.value)">
+<button onclick="removeItem(${index})">삭제</button>
+`
+
+container.appendChild(div)
+
+})
+
+}
+
+function moveUp(index){
+if(index===0) return
+
+const temp=items[index]
+items[index]=items[index-1]
+items[index-1]=temp
+
+save()
+render()
+}
+
+function moveDown(index){
+if(index===items.length-1) return
+
+const temp=items[index]
+items[index]=items[index+1]
+items[index+1]=temp
+
+save()
+render()
+}
+
+function addItem(){
+const input=document.getElementById("newItem")
+const name=input.value.trim()
+if(!name) return
+items.push({name,qty:0})
+input.value=""
+save()
+render()
+}
+
+function removeItem(index){
+items.splice(index,1)
+save()
+render()
+}
+
+function updateQty(index,val){
+items[index].qty=parseInt(val)||0
+save()
+}
+
+function resetQty(){
+items.forEach(i=>i.qty=0)
+save()
+render()
+}
+
+function completeOrder(){
+
+const result=document.getElementById("result")
+result.innerHTML="<h3>발주 리스트</h3>"
+
+const ordered=items.filter(i=>i.qty>0)
+
+ordered.forEach(i=>{
+const p=document.createElement("p")
+p.textContent=i.name+" "+i.qty
+result.appendChild(p)
+})
+
+saveHistory(ordered)
+renderHistory()
+
+}
+
+function getTodayKey(){
+const d=new Date()
+return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()
+}
+
+function saveHistory(list){
+
+if(list.length===0) return
+
+let history=JSON.parse(localStorage.getItem("order_history")||"[]")
+
+const today=getTodayKey()
+
+history=history.filter(h=>h.date!==today)
+
+history.push({date:today,items:list})
+
+const now=new Date()
+
+history=history.filter(h=>{
+const d=new Date(h.date)
+const diff=(now-d)/(1000*60*60*24)
+return diff<=2
+})
+
+localStorage.setItem("order_history",JSON.stringify(history))
+
+}
+
+function renderHistory(){
+
+const container=document.getElementById("history")
+let history=JSON.parse(localStorage.getItem("order_history")||"[]")
+
+if(history.length===0){
+container.innerHTML=""
+return
+}
+
+container.innerHTML="<h3>최근 발주 내역</h3>"
+
+history.sort((a,b)=>new Date(b.date)-new Date(a.date))
+
+history.forEach(day=>{
+
+const div=document.createElement("div")
+div.className="history-day"
+
+const title=document.createElement("strong")
+title.textContent=day.date
+
+div.appendChild(title)
+
+day.items.forEach(i=>{
+const p=document.createElement("p")
+p.textContent=i.name+" "+i.qty
+
+div.appendChild(p)
+})
+
+container.appendChild(div)
+
+})
+
+}
+
+load()
+
+if("serviceWorker" in navigator){
+navigator.serviceWorker.register("sw.js")
+}
+
+</script>
+
+</body>
 </html>
