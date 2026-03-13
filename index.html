@@ -22,8 +22,41 @@ text-align:center;
 font-size:17px
 }
 
+.tabs{
+display:flex;
+background:#222
+}
+
+.tab{
+flex:1;
+padding:10px;
+color:white;
+text-align:center;
+cursor:pointer
+}
+
+.tab.active{
+background:#444
+}
+
 .container{
 padding:12px
+}
+
+.group{
+margin-bottom:10px
+}
+
+.group-title{
+background:#ddd;
+padding:6px;
+border-radius:6px;
+font-weight:bold;
+cursor:pointer
+}
+
+.group-items{
+margin-top:6px
 }
 
 .item{
@@ -81,6 +114,18 @@ border-radius:8px;
 font-size:14px
 }
 
+.history-grid{
+display:flex;
+gap:10px
+}
+
+.history-col{
+flex:1;
+background:white;
+padding:10px;
+border-radius:8px
+}
+
 </style>
 </head>
 
@@ -88,7 +133,14 @@ font-size:14px
 
 <header>📦 발주 앱</header>
 
+<div class="tabs">
+<div class="tab active" onclick="showTab('order')">발주 입력</div>
+<div class="tab" onclick="showTab('history')">발주 확인</div>
+</div>
+
 <div class="container">
+
+<div id="orderPage">
 
 <div id="items"></div>
 
@@ -103,11 +155,38 @@ font-size:14px
 </div>
 
 <div id="result"></div>
-<div id="history"></div>
+
+</div>
+
+<div id="historyPage" style="display:none">
+
+<div class="history-grid">
+
+<div class="history-col">
+<h3>오늘 발주</h3>
+<div id="todayHistory"></div>
+</div>
+
+<div class="history-col">
+<h3>어제 발주</h3>
+<div id="yesterdayHistory"></div>
+</div>
+
+</div>
+
+</div>
 
 </div>
 
 <script>
+
+const groups={
+"냉장":["밀떡","치즈떡","구슬떡","쌈무","찌개두부"],
+"냉동":["냉동딸기","냉동망고","냉동감자"],
+"소스":["무침소스","특제간장","초간장","마요네즈"],
+"건식":["당면","빙수팥","후르츠칵"],
+"기타":[]
+}
 
 const defaultItems=[
 "토스트빵","육수","밀떡","치즈떡","구슬떡","볶음소스","알밥 단무지","깍둑 단무지",
@@ -124,6 +203,23 @@ const defaultItems=[
 
 let items=[]
 
+function showTab(tab){
+
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+
+if(tab==="order"){
+document.getElementById("orderPage").style.display="block"
+document.getElementById("historyPage").style.display="none"
+document.querySelectorAll(".tab")[0].classList.add("active")
+}else{
+document.getElementById("orderPage").style.display="none"
+document.getElementById("historyPage").style.display="block"
+document.querySelectorAll(".tab")[1].classList.add("active")
+renderHistory()
+}
+
+}
+
 function load(){
 
 const saved=localStorage.getItem("order_items")
@@ -135,7 +231,6 @@ items=defaultItems.map(n=>({name:n,qty:0}))
 }
 
 render()
-renderHistory()
 
 }
 
@@ -143,12 +238,54 @@ function save(){
 localStorage.setItem("order_items",JSON.stringify(items))
 }
 
+function getGroup(name){
+
+for(const g in groups){
+if(groups[g].includes(name)) return g
+}
+
+return "기타"
+
+}
+
 function render(){
 
 const container=document.getElementById("items")
 container.innerHTML=""
 
+const grouped={}
+
 items.forEach((item,index)=>{
+
+const g=getGroup(item.name)
+
+if(!grouped[g]) grouped[g]=[]
+
+grouped[g].push({item,index})
+
+})
+
+for(const g in grouped){
+
+const groupDiv=document.createElement("div")
+groupDiv.className="group"
+
+const title=document.createElement("div")
+title.className="group-title"
+title.textContent=g
+
+const itemsDiv=document.createElement("div")
+itemsDiv.className="group-items"
+
+title.onclick=()=>{
+itemsDiv.style.display=
+itemsDiv.style.display==="none"?"block":"none"
+}
+
+grouped[g].forEach(data=>{
+
+const item=data.item
+const index=data.index
 
 const div=document.createElement("div")
 div.className="item"
@@ -159,12 +296,19 @@ div.innerHTML=`
 <span>${item.name}</span>
 <input type="number" min="0" value="${item.qty}" onchange="updateQty(${index},this.value)">
 <button onclick="editItem(${index})">수정</button>
-<button onclick="removeItem(${index})">삭제</button>
+<button onclick="removeItem(${index})">X</button>
 `
 
-container.appendChild(div)
+itemsDiv.appendChild(div)
 
 })
+
+groupDiv.appendChild(title)
+groupDiv.appendChild(itemsDiv)
+
+container.appendChild(groupDiv)
+
+}
 
 }
 
@@ -235,7 +379,6 @@ result.appendChild(p)
 })
 
 saveHistory(ordered)
-renderHistory()
 
 }
 
@@ -256,48 +399,38 @@ history=history.filter(h=>h.date!==today)
 
 history.push({date:today,items:list})
 
-const now=new Date()
-
-history=history.filter(h=>{
-const d=new Date(h.date)
-const diff=(now-d)/(1000*60*60*24)
-return diff<=2
-})
-
 localStorage.setItem("order_history",JSON.stringify(history))
 
 }
 
 function renderHistory(){
 
-const container=document.getElementById("history")
 let history=JSON.parse(localStorage.getItem("order_history")||"[]")
 
-if(history.length===0){
-container.innerHTML=""
-return
-}
+const today=getTodayKey()
 
-container.innerHTML="<h3>최근 발주 내역</h3>"
+const yesterdayDate=new Date()
+yesterdayDate.setDate(yesterdayDate.getDate()-1)
 
-history.sort((a,b)=>new Date(b.date)-new Date(a.date))
+const yesterday=
+yesterdayDate.getFullYear()+"-"+(yesterdayDate.getMonth()+1)+"-"+yesterdayDate.getDate()
+
+document.getElementById("todayHistory").innerHTML=""
+document.getElementById("yesterdayHistory").innerHTML=""
 
 history.forEach(day=>{
 
-const div=document.createElement("div")
+const target=
+day.date===today?"todayHistory":
+day.date===yesterday?"yesterdayHistory":null
 
-const title=document.createElement("strong")
-title.textContent=day.date
-
-div.appendChild(title)
+if(!target) return
 
 day.items.forEach(i=>{
 const p=document.createElement("p")
 p.textContent=i.name+" "+i.qty
-div.appendChild(p)
+document.getElementById(target).appendChild(p)
 })
-
-container.appendChild(div)
 
 })
 
