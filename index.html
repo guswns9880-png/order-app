@@ -106,14 +106,6 @@ margin-top:10px;
 flex-wrap:wrap
 }
 
-#result,#history{
-margin-top:15px;
-background:white;
-padding:10px;
-border-radius:8px;
-font-size:14px
-}
-
 .history-grid{
 display:flex;
 gap:10px
@@ -136,6 +128,7 @@ border-radius:8px
 <div class="tabs">
 <div class="tab active" onclick="showTab('order')">발주 입력</div>
 <div class="tab" onclick="showTab('history')">발주 확인</div>
+<div class="tab" onclick="showTab('groups')">그룹 설정</div>
 </div>
 
 <div class="container">
@@ -176,17 +169,19 @@ border-radius:8px
 
 </div>
 
+<div id="groupPage" style="display:none">
+
+<h3>그룹 설정</h3>
+
+<div id="groupEditor"></div>
+
+<button onclick="saveGroups()">그룹 저장</button>
+
+</div>
+
 </div>
 
 <script>
-
-const groups={
-"냉장":["밀떡","치즈떡","구슬떡","쌈무","찌개두부"],
-"냉동":["냉동딸기","냉동망고","냉동감자"],
-"소스":["무침소스","특제간장","초간장","마요네즈"],
-"건식":["당면","빙수팥","후르츠칵"],
-"기타":[]
-}
 
 const defaultItems=[
 "토스트빵","육수","밀떡","치즈떡","구슬떡","볶음소스","알밥 단무지","깍둑 단무지",
@@ -202,6 +197,7 @@ const defaultItems=[
 ]
 
 let items=[]
+let itemGroups=JSON.parse(localStorage.getItem("item_groups")||"{}")
 
 function showTab(tab){
 
@@ -210,12 +206,24 @@ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
 if(tab==="order"){
 document.getElementById("orderPage").style.display="block"
 document.getElementById("historyPage").style.display="none"
+document.getElementById("groupPage").style.display="none"
 document.querySelectorAll(".tab")[0].classList.add("active")
-}else{
+}
+
+if(tab==="history"){
 document.getElementById("orderPage").style.display="none"
 document.getElementById("historyPage").style.display="block"
+document.getElementById("groupPage").style.display="none"
 document.querySelectorAll(".tab")[1].classList.add("active")
 renderHistory()
+}
+
+if(tab==="groups"){
+document.getElementById("orderPage").style.display="none"
+document.getElementById("historyPage").style.display="none"
+document.getElementById("groupPage").style.display="block"
+document.querySelectorAll(".tab")[2].classList.add("active")
+renderGroupEditor()
 }
 
 }
@@ -231,6 +239,7 @@ items=defaultItems.map(n=>({name:n,qty:0}))
 }
 
 render()
+renderHistory()
 
 }
 
@@ -239,13 +248,7 @@ localStorage.setItem("order_items",JSON.stringify(items))
 }
 
 function getGroup(name){
-
-for(const g in groups){
-if(groups[g].includes(name)) return g
-}
-
-return "기타"
-
+return itemGroups[name] || "기타"
 }
 
 function render(){
@@ -309,6 +312,50 @@ groupDiv.appendChild(itemsDiv)
 container.appendChild(groupDiv)
 
 }
+
+}
+
+function renderGroupEditor(){
+
+const container=document.getElementById("groupEditor")
+container.innerHTML=""
+
+const groupList=["기타","냉장","냉동","건식","소스"]
+
+items.forEach((item)=>{
+
+const div=document.createElement("div")
+
+const select=document.createElement("select")
+
+groupList.forEach(g=>{
+const option=document.createElement("option")
+option.value=g
+option.textContent=g
+if(itemGroups[item.name]===g) option.selected=true
+select.appendChild(option)
+})
+
+select.onchange=()=>{
+itemGroups[item.name]=select.value
+}
+
+div.innerHTML=`<span>${item.name}</span> `
+div.appendChild(select)
+
+container.appendChild(div)
+
+})
+
+}
+
+function saveGroups(){
+
+localStorage.setItem("item_groups",JSON.stringify(itemGroups))
+
+alert("그룹 저장 완료")
+
+render()
 
 }
 
@@ -379,6 +426,7 @@ result.appendChild(p)
 })
 
 saveHistory(ordered)
+renderHistory()
 
 }
 
@@ -399,38 +447,52 @@ history=history.filter(h=>h.date!==today)
 
 history.push({date:today,items:list})
 
+const now=new Date()
+
+history=history.filter(h=>{
+const d=new Date(h.date)
+const diff=(now-d)/(1000*60*60*24)
+return diff<=2
+})
+
 localStorage.setItem("order_history",JSON.stringify(history))
 
 }
 
 function renderHistory(){
 
+const containerToday=document.getElementById("todayHistory")
+const containerYesterday=document.getElementById("yesterdayHistory")
+
+containerToday.innerHTML=""
+containerYesterday.innerHTML=""
+
 let history=JSON.parse(localStorage.getItem("order_history")||"[]")
 
 const today=getTodayKey()
 
-const yesterdayDate=new Date()
-yesterdayDate.setDate(yesterdayDate.getDate()-1)
+const yDate=new Date()
+yDate.setDate(yDate.getDate()-1)
 
-const yesterday=
-yesterdayDate.getFullYear()+"-"+(yesterdayDate.getMonth()+1)+"-"+yesterdayDate.getDate()
-
-document.getElementById("todayHistory").innerHTML=""
-document.getElementById("yesterdayHistory").innerHTML=""
+const yesterday=yDate.getFullYear()+"-"+(yDate.getMonth()+1)+"-"+yDate.getDate()
 
 history.forEach(day=>{
 
-const target=
-day.date===today?"todayHistory":
-day.date===yesterday?"yesterdayHistory":null
-
-if(!target) return
-
+if(day.date===today){
 day.items.forEach(i=>{
 const p=document.createElement("p")
 p.textContent=i.name+" "+i.qty
-document.getElementById(target).appendChild(p)
+containerToday.appendChild(p)
 })
+}
+
+if(day.date===yesterday){
+day.items.forEach(i=>{
+const p=document.createElement("p")
+p.textContent=i.name+" "+i.qty
+containerYesterday.appendChild(p)
+})
+}
 
 })
 
