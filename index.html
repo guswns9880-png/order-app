@@ -8,56 +8,22 @@
 
 <style>
 
-body{
-font-family:sans-serif;
-margin:0;
-background:#f2f2f2
-}
+body{font-family:sans-serif;margin:0;background:#f2f2f2}
 
-header{
-background:#111;
-color:white;
-padding:12px;
-text-align:center;
-font-size:17px
-}
+header{background:#111;color:white;padding:12px;text-align:center;font-size:17px}
 
-.tabs{
-display:flex;
-background:#222
-}
+.tabs{display:flex;background:#222}
 
-.tab{
-flex:1;
-padding:10px;
-color:white;
-text-align:center;
-cursor:pointer
-}
+.tab{flex:1;padding:10px;color:white;text-align:center;cursor:pointer}
+.tab.active{background:#444}
 
-.tab.active{
-background:#444
-}
+.container{padding:12px}
 
-.container{
-padding:12px
-}
+.group{margin-bottom:10px}
 
-.group{
-margin-bottom:10px
-}
+.group-title{background:#ddd;padding:6px;border-radius:6px;font-weight:bold;cursor:pointer}
 
-.group-title{
-background:#ddd;
-padding:6px;
-border-radius:6px;
-font-weight:bold;
-cursor:pointer
-}
-
-.group-items{
-margin-top:6px
-}
+.group-items{margin-top:6px}
 
 .item{
 display:flex;
@@ -78,10 +44,13 @@ overflow:hidden;
 text-overflow:ellipsis
 }
 
-input[type='number']{
-width:45px;
-text-align:center
+.prev{
+font-size:11px;
+color:#888;
+margin-left:4px;
 }
+
+input[type='number']{width:45px;text-align:center}
 
 button{
 padding:4px 6px;
@@ -92,31 +61,13 @@ color:white;
 font-size:12px
 }
 
-.sortbtn{
-width:26px;
-height:24px;
-padding:0;
-background:#555
-}
+.sortbtn{width:26px;height:24px;padding:0;background:#555}
 
-.controls{
-display:flex;
-gap:6px;
-margin-top:10px;
-flex-wrap:wrap
-}
+.controls{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 
-.history-grid{
-display:flex;
-gap:10px
-}
+.history-grid{display:flex;gap:10px}
 
-.history-col{
-flex:1;
-background:white;
-padding:10px;
-border-radius:8px
-}
+.history-col{flex:1;background:white;padding:10px;border-radius:8px}
 
 </style>
 </head>
@@ -134,6 +85,10 @@ border-radius:8px
 <div class="container">
 
 <div id="orderPage">
+
+<div class="controls">
+<button onclick="toggleSort()">정렬 ON/OFF</button>
+</div>
 
 <div id="items"></div>
 
@@ -170,85 +125,45 @@ border-radius:8px
 </div>
 
 <div id="groupPage" style="display:none">
-
 <h3>그룹 설정</h3>
-
 <div id="groupEditor"></div>
-
 <button onclick="saveGroups()">그룹 저장</button>
-
 </div>
 
 </div>
 
 <script>
 
-const defaultItems=[
-"토스트빵","육수","밀떡","치즈떡","구슬떡","볶음소스","알밥 단무지","깍둑 단무지",
-"쌈무","멸균우유","휘핑크림","그라나파다노 치즈","다진마늘","깐계란","분말가루",
-"우동면","칼국수면","버터","꼬들무 명태회","김치전골","맑은전골","왕만두","종합어묵",
-"꼬치어묵","부산어묵","냉동딸기","냉동망고","두부김치","무뼈닭발","오돌뼈","쭈꾸미",
-"부추전","먹태","육회","김치전","베이컨,크럼블","옥수수전","치킨","고추튀김",
-"돈까스","닭갈비","곱대창","수비드삼겹살","목전지","뼈닭발","은행","우유튀김",
-"새우살","냉동감자","스마일감자(쿠팡)","데이터펍스(쿠팡)","묵사발육수","식혜",
-"찌개두부","돼지갈비소스","무침소스","특제간장","초간장","마요네즈","우동다시",
-"돈까스소스","당면","빙수팥","후르츠칵","빙수떡","사리면","체다슬","우삼겹",
-"피자치즈","절단꽃게","펩시콜라","명태튀각","조미김가루","우동건더기","테이블냅킨","핸드타올"
-]
+const defaultItems=[ "토스트빵","육수","밀떡","치즈떡","구슬떡","볶음소스","알밥 단무지","깍둑 단무지","쌈무","멸균우유","휘핑크림","그라나파다노 치즈","다진마늘","깐계란","분말가루","우동면","칼국수면","버터","꼬들무 명태회","김치전골","맑은전골","왕만두","종합어묵","꼬치어묵","부산어묵","냉동딸기","냉동망고","두부김치","무뼈닭발","오돌뼈","쭈꾸미","부추전","먹태","육회","김치전","베이컨,크럼블","옥수수전","치킨","고추튀김","돈까스","닭갈비","곱대창","수비드삼겹살","목전지","뼈닭발","은행","우유튀김","새우살","냉동감자","스마일감자(쿠팡)","데이터펍스(쿠팡)","묵사발육수","식혜","찌개두부","돼지갈비소스","무침소스","특제간장","초간장","마요네즈","우동다시","돈까스소스","당면","빙수팥","후르츠칵","빙수떡","사리면","체다슬","우삼겹","피자치즈","절단꽃게","펩시콜라","명태튀각","조미김가루","우동건더기","테이블냅킨","핸드타올" ]
 
 let items=[]
 let itemGroups=JSON.parse(localStorage.getItem("item_groups")||"{}")
+let sortVisible=true
 
-function showTab(tab){
-
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
-
-if(tab==="order"){
-document.getElementById("orderPage").style.display="block"
-document.getElementById("historyPage").style.display="none"
-document.getElementById("groupPage").style.display="none"
-document.querySelectorAll(".tab")[0].classList.add("active")
-}
-
-if(tab==="history"){
-document.getElementById("orderPage").style.display="none"
-document.getElementById("historyPage").style.display="block"
-document.getElementById("groupPage").style.display="none"
-document.querySelectorAll(".tab")[1].classList.add("active")
-renderHistory()
-}
-
-if(tab==="groups"){
-document.getElementById("orderPage").style.display="none"
-document.getElementById("historyPage").style.display="none"
-document.getElementById("groupPage").style.display="block"
-document.querySelectorAll(".tab")[2].classList.add("active")
-renderGroupEditor()
-}
-
-}
-
-function load(){
-
-const saved=localStorage.getItem("order_items")
-
-if(saved){
-items=JSON.parse(saved)
-}else{
-items=defaultItems.map(n=>({name:n,qty:0}))
-}
-
+function toggleSort(){
+sortVisible=!sortVisible
 render()
-renderHistory()
-
 }
 
-function save(){
-localStorage.setItem("order_items",JSON.stringify(items))
+function getYesterdayData(){
+let history=JSON.parse(localStorage.getItem("order_history")||"[]")
+
+const yDate=new Date()
+yDate.setDate(yDate.getDate()-1)
+
+const yKey=yDate.getFullYear()+"-"+(yDate.getMonth()+1)+"-"+yDate.getDate()
+
+const found=history.find(h=>h.date===yKey)
+
+const map={}
+
+if(found){
+found.items.forEach(i=>{
+map[i.name]=i.qty
+})
 }
 
-function getGroup(name){
-return itemGroups[name] || "기타"
+return map
 }
 
 function render(){
@@ -256,16 +171,14 @@ function render(){
 const container=document.getElementById("items")
 container.innerHTML=""
 
+const yesterdayMap=getYesterdayData()
+
 const grouped={}
 
 items.forEach((item,index)=>{
-
-const g=getGroup(item.name)
-
+const g=itemGroups[item.name]||"기타"
 if(!grouped[g]) grouped[g]=[]
-
 grouped[g].push({item,index})
-
 })
 
 for(const g in grouped){
@@ -278,11 +191,9 @@ title.className="group-title"
 title.textContent=g
 
 const itemsDiv=document.createElement("div")
-itemsDiv.className="group-items"
 
 title.onclick=()=>{
-itemsDiv.style.display=
-itemsDiv.style.display==="none"?"block":"none"
+itemsDiv.style.display=itemsDiv.style.display==="none"?"block":"none"
 }
 
 grouped[g].forEach(data=>{
@@ -290,13 +201,15 @@ grouped[g].forEach(data=>{
 const item=data.item
 const index=data.index
 
+const prev=yesterdayMap[item.name] || 0
+
 const div=document.createElement("div")
 div.className="item"
 
 div.innerHTML=`
-<button class="sortbtn" onclick="moveUp(${index})">▲</button>
-<button class="sortbtn" onclick="moveDown(${index})">▼</button>
-<span>${item.name}</span>
+${sortVisible?`<button class="sortbtn" onclick="moveUp(${index})">▲</button>
+<button class="sortbtn" onclick="moveDown(${index})">▼</button>`:""}
+<span>${item.name} <span class="prev">(${prev})</span></span>
 <input type="number" min="0" value="${item.qty}" onchange="updateQty(${index},this.value)">
 <button onclick="editItem(${index})">수정</button>
 <button onclick="removeItem(${index})">X</button>
@@ -308,126 +221,40 @@ itemsDiv.appendChild(div)
 
 groupDiv.appendChild(title)
 groupDiv.appendChild(itemsDiv)
-
 container.appendChild(groupDiv)
 
 }
 
 }
 
-function renderGroupEditor(){
-
-const container=document.getElementById("groupEditor")
-container.innerHTML=""
-
-const groupList=["냉장","냉동1","냉동2","소스","기타"]
-
-items.forEach((item)=>{
-
-const div=document.createElement("div")
-
-const select=document.createElement("select")
-
-groupList.forEach(g=>{
-const option=document.createElement("option")
-option.value=g
-option.textContent=g
-if(itemGroups[item.name]===g) option.selected=true
-select.appendChild(option)
-})
-
-select.onchange=()=>{
-itemGroups[item.name]=select.value
-}
-
-div.innerHTML=`<span>${item.name}</span> `
-div.appendChild(select)
-
-container.appendChild(div)
-
-})
-
-}
-
-function saveGroups(){
-
-localStorage.setItem("item_groups",JSON.stringify(itemGroups))
-
-alert("그룹 저장 완료")
-
+function load(){
+const saved=localStorage.getItem("order_items")
+items=saved?JSON.parse(saved):defaultItems.map(n=>({name:n,qty:0}))
 render()
-
+renderHistory()
 }
 
-function moveUp(index){
-if(index===0) return
-const temp=items[index]
-items[index]=items[index-1]
-items[index-1]=temp
-save()
-render()
-}
+function save(){localStorage.setItem("order_items",JSON.stringify(items))}
 
-function moveDown(index){
-if(index===items.length-1) return
-const temp=items[index]
-items[index]=items[index+1]
-items[index+1]=temp
-save()
-render()
-}
-
-function addItem(){
-const input=document.getElementById("newItem")
-const name=input.value.trim()
-if(!name) return
-items.push({name,qty:0})
-input.value=""
-save()
-render()
-}
-
-function removeItem(index){
-items.splice(index,1)
-save()
-render()
-}
-
-function editItem(index){
-const newName=prompt("항목 이름 수정",items[index].name)
-if(!newName) return
-items[index].name=newName
-save()
-render()
-}
-
-function updateQty(index,val){
-items[index].qty=parseInt(val)||0
-save()
-}
-
-function resetQty(){
-items.forEach(i=>i.qty=0)
-save()
-render()
-}
+function moveUp(i){if(i===0)return;[items[i],items[i-1]]=[items[i-1],items[i]];save();render()}
+function moveDown(i){if(i===items.length-1)return;[items[i],items[i+1]]=[items[i+1],items[i]];save();render()}
+function addItem(){let n=newItem.value.trim();if(!n)return;items.push({name:n,qty:0});newItem.value="";save();render()}
+function removeItem(i){items.splice(i,1);save();render()}
+function editItem(i){let n=prompt("수정",items[i].name);if(!n)return;items[i].name=n;save();render()}
+function updateQty(i,v){items[i].qty=parseInt(v)||0;save()}
+function resetQty(){items.forEach(i=>i.qty=0);save();render()}
 
 function completeOrder(){
-
 const result=document.getElementById("result")
 result.innerHTML="<h3>발주 리스트</h3>"
-
 const ordered=items.filter(i=>i.qty>0)
-
 ordered.forEach(i=>{
 const p=document.createElement("p")
 p.textContent=i.name+" "+i.qty
 result.appendChild(p)
 })
-
 saveHistory(ordered)
 renderHistory()
-
 }
 
 function getTodayKey(){
@@ -436,64 +263,34 @@ return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()
 }
 
 function saveHistory(list){
-
-if(list.length===0) return
-
+if(list.length===0)return
 let history=JSON.parse(localStorage.getItem("order_history")||"[]")
-
 const today=getTodayKey()
-
 history=history.filter(h=>h.date!==today)
-
 history.push({date:today,items:list})
-
-const now=new Date()
-
-history=history.filter(h=>{
-const d=new Date(h.date)
-const diff=(now-d)/(1000*60*60*24)
-return diff<=2
-})
-
 localStorage.setItem("order_history",JSON.stringify(history))
-
 }
 
 function renderHistory(){
-
-const containerToday=document.getElementById("todayHistory")
-const containerYesterday=document.getElementById("yesterdayHistory")
-
-containerToday.innerHTML=""
-containerYesterday.innerHTML=""
-
 let history=JSON.parse(localStorage.getItem("order_history")||"[]")
-
 const today=getTodayKey()
+const yDate=new Date();yDate.setDate(yDate.getDate()-1)
+const yKey=yDate.getFullYear()+"-"+(yDate.getMonth()+1)+"-"+yDate.getDate()
 
-const yDate=new Date()
-yDate.setDate(yDate.getDate()-1)
-
-const yesterday=yDate.getFullYear()+"-"+(yDate.getMonth()+1)+"-"+yDate.getDate()
+todayHistory.innerHTML=""
+yesterdayHistory.innerHTML=""
 
 history.forEach(day=>{
-
 if(day.date===today){
 day.items.forEach(i=>{
-const p=document.createElement("p")
-p.textContent=i.name+" "+i.qty
-containerToday.appendChild(p)
+todayHistory.innerHTML+=`<p>${i.name} ${i.qty}</p>`
 })
 }
-
-if(day.date===yesterday){
+if(day.date===yKey){
 day.items.forEach(i=>{
-const p=document.createElement("p")
-p.textContent=i.name+" "+i.qty
-containerYesterday.appendChild(p)
+yesterdayHistory.innerHTML+=`<p>${i.name} ${i.qty}</p>`
 })
 }
-
 })
 
 }
@@ -502,6 +299,7 @@ load()
 
 if("serviceWorker" in navigator){
 navigator.serviceWorker.register("sw.js")
+alert("홈화면에 추가하면 앱처럼 사용 가능!")
 }
 
 </script>
